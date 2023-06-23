@@ -82,7 +82,7 @@ class BlueprintSetupState:
         #: A dictionary with URL defaults that is added to each and every
         #: URL that was defined with the blueprint.
         self.url_defaults = dict(self.blueprint.url_values_defaults)
-        self.url_defaults.update(self.options.get("url_defaults", ()))
+        self.url_defaults |= self.options.get("url_defaults", ())
 
     def add_url_rule(
         self,
@@ -313,7 +313,7 @@ class Blueprint(Scaffold):
                 f" provide a unique name."
             )
 
-        first_bp_registration = not any(bp is self for bp in app.blueprints.values())
+        first_bp_registration = all(bp is not self for bp in app.blueprints.values())
         first_name_registration = name not in app.blueprints
 
         app.blueprints[name] = self
@@ -340,9 +340,7 @@ class Blueprint(Scaffold):
                 value = defaultdict(
                     dict,
                     {
-                        code: {
-                            exc_class: func for exc_class, func in code_values.items()
-                        }
+                        code: dict(code_values.items())
                         for code, code_values in value.items()
                     },
                 )
@@ -385,7 +383,7 @@ class Blueprint(Scaffold):
                 bp_subdomain = blueprint.subdomain
 
             if state.subdomain is not None and bp_subdomain is not None:
-                bp_options["subdomain"] = bp_subdomain + "." + state.subdomain
+                bp_options["subdomain"] = f"{bp_subdomain}.{state.subdomain}"
             elif bp_subdomain is not None:
                 bp_options["subdomain"] = bp_subdomain
             elif state.subdomain is not None:
